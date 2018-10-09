@@ -1,1 +1,124 @@
 # Playing-with-PCA
+
+MontereyOTU<-read.table("Monterey.FINAL.0.03.subsample.fn.shared",header=T,sep="\t",na.strings="NA")
+OxygenMatrix<-read.csv("OxygenMatrixMontereyFull.csv",header=T,na.strings="NA")
+
+library("vegan", lib.loc="~/R/win-library/3.3")
+HellingerData<-decostand(MontereyOTU[-3][-2][-1][1:175],method = "hellinger")
+
+Date<-as.factor(OxygenMatrix$Date)
+Location<-OxygenMatrix$Location
+Zone<-OxygenMatrix$Zone
+Upwelling<-OxygenMatrix$UpwellingAvg
+
+HellingerDataAdd<-cbind(MontereyOTU[2],HellingerData,Date,Location,Zone,Upwelling,row.names=1)
+
+library("FactoMineR", lib.loc="~/R/win-library/3.3") 
+
+Result <- PCA(HellingerDataAdd[1:175],scale.unit=FALSE) #This actually accomplishes the PCA
+#We get a plot that is the same as prcomp (though inverted)
+#Good to scale if you measure in units and you don't want your answer to depend on those units or if you are comparing things of very different magnitude
+
+
+plot.PCA(Result) #Just shows individual factor map (PCA)
+
+summary(Result)
+
+#Using supplementary quantitiative and qualitative values
+
+Result1 <- PCA(HellingerDataAdd[1:178], scale.unit=FALSE, quali.sup=176:178) #This actually accomplishes PCA
+
+Result1.scaled <- PCA(HellingerDataAdd, scale.unit=TRUE, quanti.sup=179, quali.sup=176:178) #Have to scale this data because the quanti.sup is on a very different scale than the abundance data
+
+summary(Result1)
+
+#Looking at how each variable correlated with each axis at different significance values
+
+dimdesc(Result)
+
+dimdesc(Result1,proba=0.000005)
+
+
+#Playing around with plot.PCA function
+
+plot.PCA(Result1, cex=0.8, invisible="quali", title="Individuals PCA graph")
+
+plot(Result1, choix="ind", cex=0.8, invisible="quali", title="Individuals PCA graph") #This accomplishes the same thing as above
+
+
+plot.PCA(Result1, cex=0.8, invisible="quali", habillage="Date")
+
+plot.PCA(Result1, cex=0.8, invisible="quali", habillage=176) #indexes where Date is in the data.frame
+
+plot.PCA(Result1, cex=0.8, invisible="quali", habillage="Location")
+
+plot.PCA(Result1, cex=0.8, invisible="quali", habillage="Zone")
+
+
+#Adding confidence ellipses to the plot
+
+plotellipses(PCA(HellingerDataAdd[1:176], scale.unit=FALSE, quali.sup=176), cex=0.8, invisible="quali")
+
+plotellipses(Result1, cex=0.8, habillage="Date")
+
+
+#If you are interested in plotting different axes
+
+plot.PCA(Result1, cex=0.8, invisible="quali", habillage="Date", axes=3:4)
+#or
+plot(Result1, choix="ind", cex=0.8, invisible="quali", habillage="Date", axes=3:4)
+
+plot(Result1, choix="var", cex=0.8, invisible="quali", habillage="Date", axes=3:4)
+
+
+#Selecting Individuals (helpful when there are a lot of individuals and plots are overloaded with info)
+
+plot(Result1, cex=0.8, invisible="quali", habillage="Date", select="cos2 0.7") #Focusing on individuals that are projected better than 0.7 on the 2D plane--i.e. first two axes
+
+plot(Result1, cex=0.8, invisible="quali", habillage="Date", select="contrib 5") #Select the 5 individuals with the largest contributions to the first two axes
+
+plot(Result1, cex=0.8, invisible="quali", habillage="Date", select=c("M1412","M1416","M1446")) #Select individuals by name
+
+
+#Selecting Variables
+
+plot(Result1, choix="var", cex=0.8, invisible="quali", select="contrib 5") #Select the 5 individuals with the largest contributions to the first two axes--i.e. the longest arrows
+
+plot(Result1, choix="var", cex=0.8, select="contrib 5") 
+
+
+#Playing around with the plot function (autoLab="y" staggers the labels so they don't overlap)
+
+plot.PCA(Result1, cex=0.8, invisible="quali", habillage="Date", select="cos2 0.7", title="Monterey PCA", cex.main=1.1, cex.axis=0.9, shadow=TRUE, autoLab="y")
+
+
+#Using labdsv--so I can surf
+library("labdsv", lib.loc="~/R/win-library/3.3")
+
+Hell.pca<-pca(HellingerDataAdd[1:175])
+plot(Hell.pca)
+
+
+Hell.pcaAdd<-as.data.frame(cbind(Hell.pca$scores,OxygenMatrix))
+
+plot(Hell.pcaAdd$PC1,Hell.pcaAdd$PC2,col=as.factor(Hell.pcaAdd$Date),pch=20)
+text(Hell.pcaAdd$PC1,Hell.pcaAdd$PC2,Hell.pcaAdd$Location,cex=0.5,pos=3)
+text(Hell.pcaAdd$PC1,Hell.pcaAdd$PC2,rownames(Hell.pcaAdd),cex=0.5,pos=1)
+abline(h=0, lty=3)
+abline(v=0, lty=3)
+
+surf.pca(Hell.pca,HellingerDataAdd$Upwelling)
+
+
+#prcomp in stats package also accomplishes PCA
+
+Stats.pca.scaled<-prcomp(HellingerDataAdd[1:175],scale=TRUE)
+
+biplot(Stats.pca.scaled)
+
+Stats.pca<-prcomp(HellingerDataAdd[1:175])
+
+biplot(Stats.pca)
+
+
+#Correlate external continuous variables against PC1, PC2, etc. and this method becomes more than just exploratory
