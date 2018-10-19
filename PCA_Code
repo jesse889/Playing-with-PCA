@@ -1,4 +1,4 @@
-# Playing-with-PCA
+# Playing-with-PCA R Code
 
 MontereyOTU<-read.table("Monterey.FINAL.0.03.subsample.fn.shared",header=T,sep="\t",na.strings="NA")
 OxygenMatrix<-read.csv("OxygenMatrixMontereyFull.csv",header=T,na.strings="NA")
